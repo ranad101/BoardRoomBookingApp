@@ -1,24 +1,34 @@
-//
-//  ContentView.swift
-//  BoardRoomBooking
-//
-//  Created by Ranad aldawood on 22/07/1446 AH.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            NavigationView {
+                BoardRoomsView()
+            }
+            .tabItem {
+                Label("Board Rooms", systemImage: "building.2")
+            }
+
+            NavigationView {
+                EmployeesView()
+            }
+            .tabItem {
+                Label("Employees", systemImage: "person.3")
+            }
+
+            NavigationView {
+                BookingsView()
+            }
+            .tabItem {
+                Label("Bookings", systemImage: "calendar")
+            }
         }
-        .padding()
     }
 }
 
-#Preview {
-    ContentView()
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
 }
