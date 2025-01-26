@@ -11,13 +11,6 @@ struct ContentView: View {
             }
 
             NavigationView {
-                EmployeesView()
-            }
-            .tabItem {
-                Label("Employees", systemImage: "person.3")
-            }
-
-            NavigationView {
                 BookingsView()
             }
             .tabItem {

@@ -4,7 +4,7 @@ import SwiftUI
 struct BoardRoomBookingApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            EmployeesView()
         }
     }
 }
