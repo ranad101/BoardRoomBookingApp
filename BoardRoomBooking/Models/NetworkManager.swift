@@ -15,7 +15,6 @@ class NetworkManager {
         return request
     }
 
-    // Fetch all boardrooms
     func fetchBoardRooms(completion: @escaping (BoardRoomResponse?) -> Void) {
         guard let request = createRequest(endpoint: "boardrooms", method: "GET") else { return }
         URLSession.shared.dataTask(with: request) { data, _, _ in
@@ -28,142 +27,27 @@ class NetworkManager {
         }.resume()
     }
 
-    // Fetch all employees
     func fetchEmployees(completion: @escaping (EmployeeResponse?) -> Void) {
         guard let request = createRequest(endpoint: "employees", method: "GET") else { return }
         URLSession.shared.dataTask(with: request) { data, _, error in
             guard let data = data, error == nil else {
-                print("Failed to fetch employees: \(error?.localizedDescription ?? "Unknown error")")
                 completion(nil)
                 return
             }
-
-            do {
-                let response = try JSONDecoder().decode(EmployeeResponse.self, from: data)
-                completion(response)
-            } catch {
-                print("Failed to decode employees response: \(error.localizedDescription)")
-                completion(nil)
-            }
+            let employees = try? JSONDecoder().decode(EmployeeResponse.self, from: data)
+            completion(employees)
         }.resume()
     }
 
-    // Fetch all bookings
     func fetchBookings(completion: @escaping (BookingResponse?) -> Void) {
         guard let request = createRequest(endpoint: "bookings", method: "GET") else { return }
         URLSession.shared.dataTask(with: request) { data, _, error in
             guard let data = data, error == nil else {
-                print("Failed to fetch bookings: \(error?.localizedDescription ?? "Unknown error")")
                 completion(nil)
                 return
             }
-            
-            do {
-                let response = try JSONDecoder().decode(BookingResponse.self, from: data)
-                completion(response)
-            } catch {
-                print("Failed to decode bookings response: \(error.localizedDescription)")
-                completion(nil)
-            }
-        }.resume()
-    }
-
-    // Fetch specific boardroom by ID
-    func fetchBoardRoom(by id: String, completion: @escaping (BoardRoomFields?) -> Void) {
-        fetchBoardRooms { response in
-            guard let boardRooms = response?.records else {
-                completion(nil)
-                return
-            }
-            let matchingRoom = boardRooms.first(where: { $0.fields.id == id })
-            completion(matchingRoom?.fields)
-        }
-    }
-
-    // Fetch specific employee by ID
-    func fetchEmployee(by id: Int, completion: @escaping (EmployeeFields?) -> Void) {
-        fetchEmployees { response in
-            guard let employees = response?.records else {
-                completion(nil)
-                return
-            }
-            let matchingEmployee = employees.first(where: { $0.fields.id == id })
-            completion(matchingEmployee?.fields)
-        }
-    }
-
-    func fetchDetailedBookings(completion: @escaping ([BookingDetails]) -> Void) {
-        fetchBookings { response in
-            guard let records = response?.records else {
-                completion([])
-                return
-            }
-
-            let group = DispatchGroup()
-            var detailedBookings: [BookingDetails] = []
-
-            for record in records {
-                group.enter()
-
-                let boardroomID = record.fields.boardroomID // Removed unnecessary guard for non-optional type
-                guard let timestamp = record.fields.date else {
-                    group.leave()
-                    continue
-                }
-
-                let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
-                var boardroomName = "Unknown Room"
-                var employeeName = "Unknown Employee"
-
-                // Fetch Boardroom Name
-                group.enter()
-                self.fetchBoardRooms { boardroomResponse in
-                    if let matchingBoardroom = boardroomResponse?.records.first(where: { $0.fields.id == boardroomID }) {
-                        boardroomName = matchingBoardroom.fields.name
-                    }
-                    group.leave()
-                }
-
-                // Fetch Employee Name
-                group.enter()
-                self.fetchEmployees { employeeResponse in
-                    if let matchingEmployee = employeeResponse?.records.first(where: { "\($0.fields.id)" == record.fields.employeeID }) {
-                        employeeName = matchingEmployee.fields.name
-                    }
-                    group.leave()
-                }
-
-                group.notify(queue: .main) {
-                    let bookingDetail = BookingDetails(
-                        id: record.id,
-                        boardroomID: boardroomID,
-                        boardroomName: boardroomName,
-                        employeeName: employeeName,
-                        date: date
-                    )
-                    detailedBookings.append(bookingDetail)
-                    group.leave()
-                }
-            }
-
-            group.notify(queue: .main) {
-                completion(detailedBookings)
-            }
-        }
-    }
-    // Create a new booking
-    func createBooking(employeeID: String, boardroomID: String, completion: @escaping (Bool) -> Void) {
-        let payload: [String: Any] = [
-            "fields": [
-                "employee_id": employeeID,
-                "boardroom_id": boardroomID
-            ]
-        ]
-        guard let body = try? JSONSerialization.data(withJSONObject: payload, options: []),
-              let request = createRequest(endpoint: "bookings", method: "POST", body: body) else { return }
-        
-        URLSession.shared.dataTask(with: request) { data, _, _ in
-            completion(data != nil)
+            let bookings = try? JSONDecoder().decode(BookingResponse.self, from: data)
+            completion(bookings)
         }.resume()
     }
 }
