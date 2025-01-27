@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct EmployeesView: View {
+    var onLogin: (String) -> Void  // Closure to pass the logged-in employee ID
     @State private var jobNumber = ""  // User-input job number
     @State private var password = ""  // User-input password
     @State private var loginFailed = false  // Flag for login failure
-    @State private var shouldNavigate = false  // Controls navigation to the main app
     @State private var isPasswordVisible = false  // Toggle password visibility
     @StateObject private var viewModel = EmployeesViewModel()  // Fetch employees
 
@@ -72,10 +72,6 @@ struct EmployeesView: View {
         .onAppear {
             viewModel.loadEmployees()  // Fetch employees when the screen appears
         }
-        .fullScreenCover(isPresented: $shouldNavigate) {
-            ContentView()
-                .navigationBarHidden(true)  // Hides navigation bar in the main app
-        }
     }
 
     // Login Logic
@@ -88,6 +84,6 @@ struct EmployeesView: View {
         }
 
         print("Login successful for employee: \(employee.name)")
-        shouldNavigate = true
+        onLogin(jobNumber)  // Pass the logged-in employee's job number to ContentView
     }
 }

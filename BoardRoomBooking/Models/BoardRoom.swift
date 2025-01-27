@@ -10,7 +10,7 @@ struct BoardRoomRecord: Codable {
     let fields: BoardRoomFields
 }
 
-struct BoardRoomFields: Codable {
+struct BoardRoomFields: Codable, Identifiable {
     let description: String
     let floorNo: Int
     let imageURL: String

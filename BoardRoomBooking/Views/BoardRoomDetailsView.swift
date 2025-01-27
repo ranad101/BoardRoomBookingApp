@@ -1,60 +1,68 @@
 import SwiftUI
 
-struct BoardRoomDetailsView: View {
+struct BoardRoomDetailView: View {
     let boardroom: BoardRoomFields
-    let selectedDate: Date
+    let employeeID: String
+
+    @State private var isBookingSuccessful: Bool?
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Boardroom Image
+        VStack(alignment: .leading, spacing: 16) {
+            // Display boardroom details
             AsyncImage(url: URL(string: boardroom.imageURL)) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
+                image.resizable().aspectRatio(contentMode: .fill)
             } placeholder: {
                 ProgressView()
             }
             .frame(height: 200)
             .cornerRadius(10)
-
-            // Boardroom Details
+            
             Text(boardroom.name)
-                .font(.largeTitle)
-                .fontWeight(.bold)
+                .font(.title)
+                .bold()
+            
+            Text("Floor: \(boardroom.floorNo)")
+            Text("Seats: \(boardroom.seatNo)")
             Text(boardroom.description)
-                .font(.body)
-                .padding(.horizontal)
-                .multilineTextAlignment(.leading)
-
+            
             HStack {
-                Text("Floor: \(boardroom.floorNo)")
-                Text("Seats: \(boardroom.seatNo)")
-            }
-            .font(.subheadline)
-
-            // Facilities
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Facilities:")
-                    .font(.headline)
                 ForEach(boardroom.facilities, id: \.self) { facility in
-                    Text("- \(facility)")
+                    Text(facility)
+                        .font(.caption)
+                        .padding(5)
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(5)
                 }
             }
-            .padding(.horizontal)
-
+            
             Spacer()
-
-            // Book Now Button
-            NavigationLink(destination: BookingConfirmationView(boardroom: boardroom, selectedDate: selectedDate)) {
+            
+            // Booking Button
+            Button(action: {
+                let currentDate = Int(Date().timeIntervalSince1970)
+                NetworkManager.shared.postBooking(employeeID: employeeID, boardroomID: boardroom.id, date: currentDate) { success in
+                    DispatchQueue.main.async {
+                        if success {
+                            isBookingSuccessful = true
+                        } else {
+                            isBookingSuccessful = false
+                        }
+                    }
+                }
+            }) {
                 Text("Book Now")
-                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
                     .background(Color.blue)
                     .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .cornerRadius(8)
             }
-            .padding()
-        }
-        .padding()
-        .navigationTitle("Boardroom Details")
-    }
+            .alert(isPresented: Binding<Bool>(get: { isBookingSuccessful != nil }, set: { _ in })) {
+                if isBookingSuccessful == true {
+                    return Alert(title: Text("Success"), message: Text("Boardroom booked successfully!"), dismissButton: .default(Text("OK")))
+                } else {
+                    return Alert(title: Text("Error"), message: Text("Failed to book boardroom. Please try again."), dismissButton: .default(Text("OK")))
+                }
+            }}    }
 }

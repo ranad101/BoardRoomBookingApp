@@ -3,9 +3,16 @@ import SwiftUI
 struct BoardRoomsView: View {
     @StateObject private var viewModel = BoardRoomViewModel()
     @State private var selectedRoom: BoardRoomFields?
+    let loggedInEmployeeID: String
 
     var body: some View {
         VStack {
+            // Header Section
+            Text("Board Rooms")
+                .font(.largeTitle)
+                .bold()
+                .padding()
+
             // Date Picker
             DatePicker("Select Date", selection: $viewModel.selectedDate, displayedComponents: .date)
                 .datePickerStyle(GraphicalDatePickerStyle())
@@ -13,13 +20,13 @@ struct BoardRoomsView: View {
 
             // List of Boardrooms
             List(viewModel.filterBoardRooms(by: viewModel.selectedDate), id: \.id) { room in
-                NavigationLink(destination: BoardRoomDetailsView(boardroom: room, selectedDate: viewModel.selectedDate)) {
+                Button(action: {
+                    selectedRoom = room
+                }) {
                     VStack(alignment: .leading, spacing: 10) {
                         // Display the image
                         AsyncImage(url: URL(string: room.imageURL)) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
+                            image.resizable().aspectRatio(contentMode: .fill)
                         } placeholder: {
                             ProgressView()
                         }
@@ -50,14 +57,17 @@ struct BoardRoomsView: View {
                             }
                         }
                     }
-                    .padding()
+                }
+                .buttonStyle(PlainButtonStyle())
+                .sheet(item: $selectedRoom) { room in
+                    BoardRoomDetailView(boardroom: room, employeeID: loggedInEmployeeID)
                 }
             }
         }
         .onAppear {
             viewModel.loadBoardRooms()
             viewModel.loadBookings()
+            viewModel.loadEmployeeBookings(employeeID: loggedInEmployeeID)
         }
-        .navigationTitle("Board Rooms")
     }
 }

@@ -50,4 +50,49 @@ class NetworkManager {
             completion(bookings)
         }.resume()
     }
+    func postBooking(employeeID: String, boardroomID: String, date: Int, completion: @escaping (Bool) -> Void) {
+        let payload: [String: Any] = [
+            "fields": [
+                "employee_id": employeeID,
+                "boardroom_id": boardroomID,
+                "date": date
+            ]
+        ]
+
+        guard let body = try? JSONSerialization.data(withJSONObject: payload, options: []),
+              let request = createRequest(endpoint: "bookings", method: "POST", body: body) else {
+            print("Failed to create POST request")
+            completion(false)
+            return
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("Failed to post booking: \(error.localizedDescription)")
+                completion(false)
+                return
+            }
+
+            // Check the response status code
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                print("Booking posted successfully!")
+
+                // Validate the booking on the server
+                // Validate the booking on the server
+                NetworkManager.shared.fetchBookings { bookings in
+                    if let bookings = bookings?.records,
+                       bookings.contains(where: { $0.fields.employeeID == employeeID && $0.fields.boardroomID == boardroomID && $0.fields.date == date }) {
+                        print("Booking verified on the server!")
+                    } else {
+                        print("Booking not found on the server.")
+                    }
+                }
+
+                completion(true)
+            } else {
+                print("Failed to post booking. Status code: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                completion(false)
+            }
+        }.resume()
+    }
 }
