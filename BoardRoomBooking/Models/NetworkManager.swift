@@ -73,10 +73,13 @@ class NetworkManager {
                 return
             }
 
+        
             // Check the response status code
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 print("Booking posted successfully!")
-
+           
+                    print((String(data: data!, encoding: .utf8) ?? "") +  "📱" )
+                
                 // Validate the booking on the server
                 // Validate the booking on the server
                 NetworkManager.shared.fetchBookings { bookings in

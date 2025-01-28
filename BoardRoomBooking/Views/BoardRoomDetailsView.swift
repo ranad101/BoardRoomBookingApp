@@ -42,10 +42,10 @@ struct BoardRoomDetailView: View {
                 let currentDate = Int(Date().timeIntervalSince1970)
                 NetworkManager.shared.postBooking(employeeID: employeeID, boardroomID: boardroom.id, date: currentDate) { success in
                     DispatchQueue.main.async {
+                        isBookingSuccessful = success
                         if success {
-                            isBookingSuccessful = true
-                        } else {
-                            isBookingSuccessful = false
+                            // Reload bookings so the availability updates
+                            NotificationCenter.default.post(name: NSNotification.Name("BookingUpdated"), object: nil)
                         }
                     }
                 }

@@ -32,12 +32,11 @@ class BoardRoomViewModel: ObservableObject {
         }
     }
 
-    // Filter boardrooms to show availability on the selected date
+    // 🔹 FIX: Filter Boardrooms to show correct availability based on bookings
     func filterBoardRooms(by date: Date) -> [BoardRoomFields] {
         let selectedDayStart = Calendar.current.startOfDay(for: date)
         let selectedDayEnd = Calendar.current.date(byAdding: .day, value: 1, to: selectedDayStart)!
 
-        // Filter boardrooms based on bookings
         return boardRooms.map { room in
             let isBooked = bookings.contains { booking in
                 booking.boardroomID == room.id &&
@@ -45,12 +44,11 @@ class BoardRoomViewModel: ObservableObject {
                  Date(timeIntervalSince1970: TimeInterval(booking.date ?? 0)) < selectedDayEnd)
             }
 
-            // Append availability to room name
             return BoardRoomFields(
                 description: room.description,
                 floorNo: room.floorNo,
                 imageURL: room.imageURL,
-                name: room.name + (isBooked ? " (Unavailable)" : " (Available)"),
+                name: isBooked ? "\(room.name) (Unavailable)" : "\(room.name) (Available)",
                 seatNo: room.seatNo,
                 facilities: room.facilities,
                 id: room.id
