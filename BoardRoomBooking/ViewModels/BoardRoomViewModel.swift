@@ -1,10 +1,10 @@
 import Foundation
 
 class BoardRoomViewModel: ObservableObject {
-    @Published var boardRooms: [BoardRoomFields] = []  // List of boardrooms
-    @Published var bookings: [BookingFields] = []      // List of bookings
-    @Published var selectedDate = Date()              // Currently selected date
-    @Published var employeeBookings: [BookingFields] = [] // Specific bookings for logged-in employee
+    @Published var boardRooms: [BoardRoomFields] = []  // All boardrooms
+    @Published var bookings: [BookingFields] = []      // All bookings
+    @Published var employeeBookings: [BookingFields] = [] // Employee's personal bookings
+    @Published var selectedDate = Date()               // Currently selected date
 
     func loadBoardRooms() {
         NetworkManager.shared.fetchBoardRooms { [weak self] response in
@@ -32,7 +32,6 @@ class BoardRoomViewModel: ObservableObject {
         }
     }
 
-    // 🔹 FIX: Filter Boardrooms to show correct availability based on bookings
     func filterBoardRooms(by date: Date) -> [BoardRoomFields] {
         let selectedDayStart = Calendar.current.startOfDay(for: date)
         let selectedDayEnd = Calendar.current.date(byAdding: .day, value: 1, to: selectedDayStart)!
@@ -48,7 +47,7 @@ class BoardRoomViewModel: ObservableObject {
                 description: room.description,
                 floorNo: room.floorNo,
                 imageURL: room.imageURL,
-                name: isBooked ? "\(room.name) (Unavailable)" : "\(room.name) (Available)",
+                name: room.name + (isBooked ? " (Unavailable)" : " (Available)"),
                 seatNo: room.seatNo,
                 facilities: room.facilities,
                 id: room.id

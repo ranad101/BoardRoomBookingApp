@@ -2,18 +2,18 @@ import SwiftUI
 
 struct BoardRoomsView: View {
     @StateObject private var viewModel = BoardRoomViewModel()
-    @State private var selectedRoom: BoardRoomFields? = nil  // ✅ Ensure it's optional
+    @State private var selectedRoom: BoardRoomFields?
     let loggedInEmployeeID: String
 
     var body: some View {
         VStack {
-            // **Header**
+            // Header
             Text("Board Rooms")
                 .font(.largeTitle)
                 .bold()
                 .padding()
 
-            // **Date Picker**
+            // Date Picker
             DatePicker("Select Date", selection: $viewModel.selectedDate, displayedComponents: .date)
                 .datePickerStyle(GraphicalDatePickerStyle())
                 .padding()
@@ -54,9 +54,9 @@ struct BoardRoomsView: View {
             }
 
             // **All Boardrooms List**
-            List(viewModel.filterBoardRooms(by: viewModel.selectedDate)) { room in
+            List(viewModel.filterBoardRooms(by: viewModel.selectedDate), id: \.id) { room in
                 Button(action: {
-                    selectedRoom = room  // ✅ Now boardrooms can be tapped and booked
+                    selectedRoom = room
                 }) {
                     VStack(alignment: .leading, spacing: 10) {
                         AsyncImage(url: URL(string: room.imageURL)) { image in
@@ -69,22 +69,26 @@ struct BoardRoomsView: View {
 
                         Text(room.name)
                             .font(.headline)
+                        Text("Floor: \(room.floorNo)")
+                            .font(.subheadline)
+                        Text("Seats: \(room.seatNo)")
+                            .font(.subheadline)
 
-                        // ✅ Display Availability Status for ALL Employees
-                        if viewModel.isBoardroomAvailable(roomID: room.id, date: viewModel.selectedDate) {
-                            Text("Available")
-                                .font(.caption)
-                                .foregroundColor(.green)
-                                .bold()
-                        } else {
-                            Text("Unavailable")
-                                .font(.caption)
-                                .foregroundColor(.red)
-                                .bold()
+                        HStack {
+                            ForEach(room.facilities, id: \.self) { facility in
+                                Text(facility)
+                                    .font(.caption)
+                                    .padding(5)
+                                    .background(Color.gray.opacity(0.2))
+                                    .cornerRadius(5)
+                            }
                         }
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
+                .sheet(item: $selectedRoom) { room in
+                    BoardRoomDetailView(boardroom: room, employeeID: loggedInEmployeeID)
+                }
             }
         }
         .onAppear {
@@ -94,10 +98,7 @@ struct BoardRoomsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("BookingUpdated"))) { _ in
             viewModel.loadBookings()
-            viewModel.loadBoardRooms() // ✅ Reload boardrooms after a booking update
-        }
-        .sheet(item: $selectedRoom) { room in
-            BoardRoomDetailView(boardroom: room, employeeID: loggedInEmployeeID)
+            viewModel.loadBoardRooms() // Reload boardrooms after a booking update
         }
     }
 }
