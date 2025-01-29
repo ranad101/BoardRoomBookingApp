@@ -6,88 +6,38 @@ struct BoardRoomsView: View {
     let loggedInEmployeeID: String
 
     var body: some View {
-        VStack {
-            // Header
-            Text("Board Rooms")
-                .font(.largeTitle)
-                .bold()
-                .padding()
-
-            // Date Picker
-            DatePicker("Select Date", selection: $viewModel.selectedDate, displayedComponents: .date)
-                .datePickerStyle(GraphicalDatePickerStyle())
-                .padding()
-
-            // **My Bookings Section**
-            if !viewModel.employeeBookings.isEmpty {
-                VStack(alignment: .leading) {
-                    Text("My Bookings")
-                        .font(.title2)
-                        .bold()
-                        .padding(.horizontal)
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            ForEach(viewModel.employeeBookings, id: \.boardroomID) { booking in
-                                if let room = viewModel.boardRooms.first(where: { $0.id == booking.boardroomID }) {
-                                    VStack {
-                                        AsyncImage(url: URL(string: room.imageURL)) { image in
-                                            image.resizable().aspectRatio(contentMode: .fill)
-                                        } placeholder: {
-                                            ProgressView()
-                                        }
-                                        .frame(width: 150, height: 100)
-                                        .cornerRadius(10)
-
-                                        Text(room.name)
-                                            .font(.headline)
-                                    }
-                                    .padding()
-                                    .background(Color.gray.opacity(0.2))
-                                    .cornerRadius(10)
-                                }
-                            }
-                        }
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                
+                // **Header**
+                Text("Board Rooms")
+                    .font(.largeTitle)
+                    .bold()
                     .padding(.horizontal)
+
+                // **Availability Banner**
+                AvailabilityBanner()
+
+                // **Date Selector**
+                DateSelectorView(selectedDate: $viewModel.selectedDate)
+
+                // **My Bookings**
+                if let latestBooking = viewModel.employeeBookings.sorted(by: { $0.date ?? 0 > $1.date ?? 0 }).first,
+                   let room = viewModel.boardRooms.first(where: { $0.id == latestBooking.boardroomID }) {
+                    MyBookingCard(room: room, bookingDate: latestBooking.date)
                 }
-            }
 
-            // **All Boardrooms List**
-            List(viewModel.filterBoardRooms(by: viewModel.selectedDate), id: \.id) { room in
-                Button(action: {
-                    selectedRoom = room
-                }) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        AsyncImage(url: URL(string: room.imageURL)) { image in
-                            image.resizable().aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            ProgressView()
+                // **Available & Unavailable Boardrooms**
+                Text("Available Boardrooms")
+                    .font(.title2)
+                    .bold()
+                    .padding(.horizontal)
+
+                ForEach(viewModel.filterBoardRooms(by: viewModel.selectedDate), id: \.id) { room in
+                    BoardRoomCard(room: room, isAvailable: viewModel.isBoardroomAvailable(roomID: room.id, date: viewModel.selectedDate))
+                        .onTapGesture {
+                            selectedRoom = room
                         }
-                        .frame(height: 150)
-                        .cornerRadius(10)
-
-                        Text(room.name)
-                            .font(.headline)
-                        Text("Floor: \(room.floorNo)")
-                            .font(.subheadline)
-                        Text("Seats: \(room.seatNo)")
-                            .font(.subheadline)
-
-                        HStack {
-                            ForEach(room.facilities, id: \.self) { facility in
-                                Text(facility)
-                                    .font(.caption)
-                                    .padding(5)
-                                    .background(Color.gray.opacity(0.2))
-                                    .cornerRadius(5)
-                            }
-                        }
-                    }
-                }
-                .buttonStyle(PlainButtonStyle())
-                .sheet(item: $selectedRoom) { room in
-                    BoardRoomDetailView(boardroom: room, employeeID: loggedInEmployeeID)
                 }
             }
         }
@@ -98,7 +48,139 @@ struct BoardRoomsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("BookingUpdated"))) { _ in
             viewModel.loadBookings()
-            viewModel.loadBoardRooms() // Reload boardrooms after a booking update
+            viewModel.loadBoardRooms() // ✅ Reload boardrooms after a booking update
+        }
+        .sheet(item: $selectedRoom) { room in
+            BoardRoomDetailView(boardroom: room, employeeID: loggedInEmployeeID)
         }
     }
 }
+
+// **Reusable Components**
+struct AvailabilityBanner: View {
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text("All board rooms")
+                    .font(.footnote)
+                    .foregroundColor(.white.opacity(0.8))
+                Text("Available today")
+                    .font(.title2)
+                    .bold()
+                    .foregroundColor(.white)
+            }
+            Spacer()
+            Image(systemName: "arrow.right.circle.fill")
+                .font(.title)
+                .foregroundColor(.white)
+        }
+        .padding()
+        .background(Color.orange)
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+}
+
+struct DateSelectorView: View {
+    @Binding var selectedDate: Date
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack {
+                ForEach(0..<7, id: \.self) { offset in
+                    let date = Calendar.current.date(byAdding: .day, value: offset, to: Date())!
+                    VStack {
+                        Text(date, format: .dateTime.weekday().locale(.current))
+                            .font(.caption)
+                        Text(date, format: .dateTime.day())
+                            .font(.headline)
+                    }
+                    .padding()
+                    .background(Calendar.current.isDate(selectedDate, inSameDayAs: date) ? Color.blue.opacity(0.2) : Color.clear)
+                    .cornerRadius(8)
+                    .onTapGesture {
+                        selectedDate = date
+                    }
+                }
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct MyBookingCard: View {
+    let room: BoardRoomFields
+    let bookingDate: Int?
+
+    var body: some View {
+        VStack {
+            AsyncImage(url: URL(string: room.imageURL)) { image in
+                image.resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                ProgressView()
+            }
+            .frame(width: 200, height: 120)
+            .cornerRadius(10)
+
+            VStack(alignment: .leading) {
+                Text(room.name)
+                    .font(.headline)
+                if let bookingDate = bookingDate {
+                    Text("Booked on: \(Date(timeIntervalSince1970: TimeInterval(bookingDate)), formatter: dateFormatter)")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(10)
+        .shadow(radius: 2)
+        .padding(.horizontal)
+    }
+}
+
+struct BoardRoomCard: View {
+    let room: BoardRoomFields
+    let isAvailable: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            AsyncImage(url: URL(string: room.imageURL)) { image in
+                image.resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                ProgressView()
+            }
+            .frame(height: 180)
+            .cornerRadius(12)
+
+            Text(room.name)
+                .font(.title3)
+                .bold()
+
+            HStack {
+                Text(isAvailable ? "Available" : "Unavailable")
+                    .font(.caption)
+                    .bold()
+                    .foregroundColor(isAvailable ? .green : .red)
+                Spacer()
+                Text("\(room.seatNo) Seats")
+                    .font(.caption)
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(radius: 2)
+        .padding(.horizontal)
+    }
+}
+
+// **Date Formatter**
+private let dateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateStyle = .medium
+    return formatter
+}()
+
