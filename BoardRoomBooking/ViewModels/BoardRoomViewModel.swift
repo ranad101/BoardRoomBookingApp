@@ -19,7 +19,10 @@ class BoardRoomViewModel: ObservableObject {
         NetworkManager.shared.fetchBookings { [weak self] response in
             DispatchQueue.main.async {
                 self?.bookings = response?.records.map { $0.fields } ?? []
-                print("✅ Bookings fetched:", self?.bookings.count ?? 0) // DEBUG
+                print("✅ Successfully fetched \(self?.bookings.count ?? 0) bookings") // DEBUG
+                for booking in self?.bookings ?? [] {
+                    print("📅 Booking - Employee: \(booking.employeeID), Room: \(booking.boardroomID), Date: \(booking.date ?? 0)")
+                }
             }
         }
     }

@@ -11,7 +11,7 @@ struct BookingRecord: Codable {
 
 struct BookingFields: Codable {
     let boardroomID: String
-    let date: Int?
+    let date: Double?  // Change from Int? to Double?
     let employeeID: String
 
     enum CodingKeys: String, CodingKey {
@@ -20,5 +20,4 @@ struct BookingFields: Codable {
         case employeeID = "employee_id"
     }
 }
-
 

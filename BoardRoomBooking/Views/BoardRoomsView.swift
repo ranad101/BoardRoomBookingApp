@@ -22,13 +22,15 @@ struct BoardRoomsView: View {
                 DateSelectorView(selectedDate: $viewModel.selectedDate)
 
                 // **My Bookings**
-                if let latestBooking = viewModel.employeeBookings.sorted(by: { $0.date ?? 0 > $1.date ?? 0 }).first,
+                // **My Bookings**
+                if let latestBooking = viewModel.employeeBookings.sorted(by: { ($0.date ?? 0) > ($1.date ?? 0) }).first,
                    let room = viewModel.boardRooms.first(where: { $0.id == latestBooking.boardroomID }) {
-                    MyBookingCard(room: room, bookingDate: latestBooking.date)
+                    
+                    MyBookingCard(room: room, bookingDate: Int(latestBooking.date ?? 0)) // ✅ Convert Double? to Int?
                 }
 
                 // **Available & Unavailable Boardrooms**
-                Text("Available Boardrooms")
+                Text("Boardrooms")
                     .font(.title2)
                     .bold()
                     .padding(.horizontal)
@@ -183,4 +185,5 @@ private let dateFormatter: DateFormatter = {
     formatter.dateStyle = .medium
     return formatter
 }()
+
 
