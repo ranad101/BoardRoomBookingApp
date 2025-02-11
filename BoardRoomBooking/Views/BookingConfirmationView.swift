@@ -6,18 +6,18 @@ struct BookingConfirmationView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Confirmation Details
             Text("Booking Confirmation")
                 .font(.largeTitle)
                 .fontWeight(.bold)
+            
             Text("Boardroom: \(boardroom.name)")
                 .font(.title2)
+            
             Text("Date: \(selectedDate, formatter: dateFormatter)")
                 .font(.headline)
-
+            
             Spacer()
-
-            // Confirm Button
+            
             Button(action: {
                 print("Booking confirmed!")
                 // Add your NetworkManager logic here to create the booking
@@ -35,7 +35,6 @@ struct BookingConfirmationView: View {
     }
 }
 
-// Date formatter
 private let dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateStyle = .medium

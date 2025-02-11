@@ -1,14 +1,12 @@
 import SwiftUI
 
-struct BoardRoomDetailView: View {
+struct BoardRoomDetailsView: View {
     let boardroom: BoardRoomFields
     let employeeID: String
-
     @State private var isBookingSuccessful: Bool?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Display boardroom details
             AsyncImage(url: URL(string: boardroom.imageURL)) { image in
                 image.resizable().aspectRatio(contentMode: .fill)
             } placeholder: {
@@ -34,19 +32,13 @@ struct BoardRoomDetailView: View {
                         .cornerRadius(5)
                 }
             }
-            
             Spacer()
             
-            // Booking Button
             Button(action: {
                 let currentDate = Int(Date().timeIntervalSince1970)
                 NetworkManager.shared.postBooking(employeeID: employeeID, boardroomID: boardroom.id, date: currentDate) { success in
                     DispatchQueue.main.async {
                         isBookingSuccessful = success
-                        if success {
-                            // Reload bookings so the availability updates
-                            NotificationCenter.default.post(name: NSNotification.Name("BookingUpdated"), object: nil)
-                        }
                     }
                 }
             }) {
@@ -64,5 +56,8 @@ struct BoardRoomDetailView: View {
                 } else {
                     return Alert(title: Text("Error"), message: Text("Failed to book boardroom. Please try again."), dismissButton: .default(Text("OK")))
                 }
-            }}    }
+            }
+        }
+        .padding()
+    }
 }
